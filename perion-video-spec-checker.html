@@ -1,0 +1,1191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Perion Video Spec Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pn-black:#00101a;
+    --pn-offwhite:#f3f3f3;
+    --pn-white:#ffffff;
+    --pn-pink:#ff0083;
+    --pn-orange:#ff8502;
+    --pn-blue:#0062ff;
+    --pn-purple:#7e43b5;
+    --pn-darkgrey:#656c7a;
+    --pn-midgrey:#c5c8cc;
+    --pn-lightgrey:#e3e6eb;
+    --pass:#1a9e5c;
+    --fail:#e5484d;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Poppins',system-ui,-apple-system,sans-serif;
+    background:var(--pn-offwhite);
+    color:var(--pn-black);
+    padding-bottom:64px;
+  }
+  header{
+    background:var(--pn-black);
+    color:var(--pn-white);
+    padding:28px 6vw;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .brand .mark{
+    width:12px;height:12px;border-radius:50%;
+    background:var(--pn-pink);
+    display:inline-block;
+    transform:translateY(-2px);
+  }
+  .brand-name{
+    font-weight:800;
+    font-size:22px;
+    letter-spacing:0.2px;
+  }
+  .brand-sub{
+    font-weight:500;
+    font-size:14px;
+    color:var(--pn-midgrey);
+  }
+  .tagline{
+    font-size:13px;
+    color:var(--pn-midgrey);
+    font-weight:400;
+    max-width:360px;
+    text-align:right;
+  }
+  main{
+    max-width:920px;
+    margin:0 auto;
+    padding:36px 6vw 0;
+  }
+  h1{
+    font-size:26px;
+    font-weight:700;
+    margin:0 0 6px;
+  }
+  .lead{
+    color:var(--pn-darkgrey);
+    font-size:15px;
+    margin:0 0 28px;
+    line-height:1.5;
+  }
+  .card{
+    background:var(--pn-white);
+    border:1px solid var(--pn-lightgrey);
+    border-radius:14px;
+    padding:24px;
+    margin-bottom:22px;
+  }
+  .card h2{
+    font-size:15px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    color:var(--pn-black);
+    margin:0 0 16px;
+  }
+  .spec-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:12px;
+  }
+  .spec-item{
+    background:var(--pn-offwhite);
+    border-radius:10px;
+    padding:12px 14px;
+  }
+  .spec-item .k{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--pn-darkgrey);
+    font-weight:600;
+    margin-bottom:4px;
+  }
+  .spec-item .v{
+    font-size:14px;
+    font-weight:600;
+    color:var(--pn-black);
+  }
+  #dropzone{
+    border:2px dashed var(--pn-midgrey);
+    border-radius:14px;
+    padding:48px 24px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+    background:var(--pn-white);
+  }
+  #dropzone.dragover{
+    border-color:var(--pn-pink);
+    background:#fff0f7;
+  }
+  #dropzone .icon{
+    font-size:34px;
+    margin-bottom:10px;
+  }
+  #dropzone .primary{
+    font-weight:600;
+    font-size:16px;
+    margin-bottom:4px;
+  }
+  #dropzone .secondary{
+    color:var(--pn-darkgrey);
+    font-size:13px;
+  }
+  input[type=file]{ display:none; }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    background:var(--pn-pink);
+    color:var(--pn-white);
+    border:none;
+    padding:13px 26px;
+    border-radius:999px;
+    font-family:inherit;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    transition:transform .1s, box-shadow .1s, opacity .15s;
+  }
+  .btn:hover{ box-shadow:0 6px 18px rgba(255,0,131,0.28); transform:translateY(-1px); }
+  .btn:disabled{ opacity:0.45; cursor:not-allowed; box-shadow:none; transform:none; }
+  .btn.secondary{
+    background:var(--pn-white);
+    color:var(--pn-black);
+    border:1.5px solid var(--pn-black);
+  }
+  .btn.secondary:hover{ box-shadow:0 6px 18px rgba(0,16,26,0.12); }
+  .btn-row{ display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; }
+  .filename{
+    font-weight:600;
+    font-size:15px;
+    margin-bottom:2px;
+    word-break:break-all;
+  }
+  .filemeta{ color:var(--pn-darkgrey); font-size:13px; }
+  .status-line{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:14px;
+    color:var(--pn-darkgrey);
+    margin-top:14px;
+  }
+  .spinner{
+    width:16px;height:16px;
+    border:2.5px solid var(--pn-lightgrey);
+    border-top-color:var(--pn-pink);
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+    flex:0 0 auto;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .progress-outer{
+    width:100%;
+    height:8px;
+    background:var(--pn-lightgrey);
+    border-radius:999px;
+    overflow:hidden;
+    margin-top:10px;
+  }
+  .progress-inner{
+    height:100%;
+    background:linear-gradient(90deg,var(--pn-pink),var(--pn-purple));
+    width:0%;
+    transition:width .25s ease;
+  }
+  table.report{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13.5px;
+  }
+  table.report th{
+    text-align:left;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--pn-darkgrey);
+    padding:8px 10px;
+    border-bottom:2px solid var(--pn-lightgrey);
+  }
+  table.report td{
+    padding:10px 10px;
+    border-bottom:1px solid var(--pn-lightgrey);
+    vertical-align:middle;
+  }
+  table.report tr:last-child td{ border-bottom:none; }
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-weight:700;
+    font-size:11.5px;
+    padding:4px 10px;
+    border-radius:999px;
+    letter-spacing:0.3px;
+  }
+  .badge.pass{ background:#e4f7ee; color:var(--pass); }
+  .badge.fail{ background:#fdeaea; color:var(--fail); }
+  .summary-banner{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:16px 18px;
+    border-radius:12px;
+    font-weight:600;
+    font-size:15px;
+    margin-bottom:18px;
+  }
+  .summary-banner.pass{ background:#e4f7ee; color:var(--pass); }
+  .summary-banner.fail{ background:#fff4e9; color:#a15c00; }
+  .radio-group{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin:14px 0 4px;
+  }
+  .radio-option{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    background:var(--pn-offwhite);
+    border-radius:10px;
+    padding:12px 14px;
+    cursor:pointer;
+    border:1.5px solid transparent;
+  }
+  .radio-option.selected{ border-color:var(--pn-pink); background:#fff0f7; }
+  .radio-option input{ margin-top:3px; }
+  .radio-option .t{ font-weight:600; font-size:14px; }
+  .radio-option .d{ color:var(--pn-darkgrey); font-size:12.5px; margin-top:2px; }
+  .log-box{
+    background:var(--pn-black);
+    color:#9be89b;
+    font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+    font-size:11.5px;
+    padding:12px 14px;
+    border-radius:10px;
+    max-height:140px;
+    overflow-y:auto;
+    white-space:pre-wrap;
+    margin-top:12px;
+    display:none;
+  }
+  .note{
+    font-size:12.5px;
+    color:var(--pn-darkgrey);
+    background:var(--pn-lightgrey);
+    border-radius:10px;
+    padding:10px 14px;
+    margin-top:14px;
+    line-height:1.5;
+  }
+  .hidden{ display:none !important; }
+  footer{
+    text-align:center;
+    color:var(--pn-darkgrey);
+    font-size:12px;
+    margin-top:40px;
+    padding:0 6vw;
+  }
+  a{ color:var(--pn-pink); }
+  #toastStack{
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    z-index:9999;
+  }
+  .toast{
+    background:var(--pn-black);
+    color:var(--pn-white);
+    padding:14px 18px;
+    border-radius:12px;
+    font-size:13.5px;
+    max-width:320px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.25);
+    border-left:4px solid var(--pn-pink);
+    animation:toastIn .2s ease;
+  }
+  .toast .tt{ font-weight:700; margin-bottom:2px; }
+  .toast .tb{ color:var(--pn-midgrey); }
+  @keyframes toastIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="brand-name">Perion</span>
+    <span class="mark"></span>
+    <span class="brand-sub">Video Spec Checker</span>
+  </div>
+  <div class="tagline">Client-side Mezzanine spec conformance — nothing leaves your browser.</div>
+</header>
+
+<main>
+  <h1>Bring any video up to Mezzanine spec</h1>
+  <p class="lead">Upload a video. This tool checks it against the fixed Mezzanine spec below, and if anything's off, fixes it and hands you back a compliant MP4 plus a QC report — all running locally in your browser, no upload to any server.</p>
+
+  <div class="card">
+    <h2>Target spec</h2>
+    <div class="spec-grid">
+      <div class="spec-item"><div class="k">Container</div><div class="v">MP4 only</div></div>
+      <div class="spec-item"><div class="k">Dimensions</div><div class="v">1920 × 1080</div></div>
+      <div class="spec-item"><div class="k">Frame rate</div><div class="v">23.98 or 29.97 fps</div></div>
+      <div class="spec-item"><div class="k">Duration</div><div class="v">:15, :30, or :60</div></div>
+      <div class="spec-item"><div class="k">Video bitrate</div><div class="v">15,000–30,000 kbps</div></div>
+      <div class="spec-item"><div class="k">Audio bitrate</div><div class="v">192–400 kbps</div></div>
+      <div class="spec-item"><div class="k">Audio sample rate</div><div class="v">48 kHz</div></div>
+      <div class="spec-item"><div class="k">Loudness</div><div class="v">-22 to -26 LUFS</div></div>
+    </div>
+  </div>
+
+  <div class="card" id="uploadCard">
+    <h2>Upload</h2>
+    <div id="dropzone">
+      <div class="icon">🎬</div>
+      <div class="primary">Drop a video here, or click to browse</div>
+      <div class="secondary">MP4, MOV, WebM, MKV — anything your browser's video engine can decode</div>
+    </div>
+    <input type="file" id="fileInput" accept="video/*" />
+    <div id="fileInfo" class="hidden" style="margin-top:16px;">
+      <div class="filename" id="fileNameLabel"></div>
+      <div class="filemeta" id="fileMetaLabel"></div>
+    </div>
+    <div id="engineStatus" class="status-line hidden" style="flex-direction:column;align-items:stretch;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="spinner" id="engineSpinner"></div>
+        <span id="engineStatusText">Loading video engine…</span>
+      </div>
+      <div class="progress-outer"><div class="progress-inner" id="engineProgressBar"></div></div>
+      <div class="btn-row" id="engineCancelRow">
+        <button class="btn secondary" id="engineCancelBtn">Cancel loading</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="beforeCard">
+    <h2>Spec check</h2>
+    <div id="beforeBanner"></div>
+    <table class="report" id="beforeTable"></table>
+    <div id="durationChoice" class="hidden">
+      <div class="note" style="background:#fff4e9;color:#a15c00;">
+        This clip is shorter than the nearest standard length. Trimming can't fix that — extending it is a creative call. Choose how to fill the gap:
+      </div>
+      <div class="radio-group" id="durationRadioGroup"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="fixBtn">Fix it &amp; conform to spec</button>
+      <button class="btn secondary hidden" id="skipFixBtn">Already compliant — just give me the report</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="processingCard">
+    <h2>Processing</h2>
+    <div class="status-line"><div class="spinner"></div><span id="processingText">Working…</span><span id="elapsedLabel" style="margin-left:auto;color:var(--pn-midgrey);"></span></div>
+    <div class="progress-outer"><div class="progress-inner" id="progressBar"></div></div>
+    <div class="log-box" id="logBox"></div>
+    <div class="note">Large or long files can genuinely take several minutes — this runs a real video encoder single-threaded in your browser, with no server to offload to. The elapsed timer above keeps ticking as long as it's actually working; if it stalls completely, use Cancel and try again.</div>
+    <div class="btn-row"><button class="btn secondary" id="cancelBtn">Cancel</button></div>
+  </div>
+
+  <div class="card hidden" id="afterCard">
+    <h2>Result</h2>
+    <div id="afterBanner"></div>
+    <table class="report" id="afterTable"></table>
+    <div class="btn-row">
+      <button class="btn" id="downloadVideoBtn">Download fixed MP4</button>
+      <button class="btn secondary" id="downloadReportBtn">Download QC report (.txt)</button>
+      <button class="btn secondary" id="startOverBtn">Check another video</button>
+    </div>
+  </div>
+
+  <div class="note" id="engineNote">
+    First run downloads a ~30MB video engine (ffmpeg, compiled to WebAssembly) from a public CDN — it only happens once per browser session, and every encode after that runs fully offline on your machine. Large or long clips can take a minute or two since this runs single-threaded in-browser.
+  </div>
+</main>
+
+<footer>Perion internal tool · runs entirely client-side · loudness target defaults to -24 LUFS (midpoint of -22 to -26)</footer>
+
+<div id="toastStack"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  const SPEC = {
+    width: 1920, height: 1080,
+    fpsOptions: [23.976, 29.97],
+    durationOptions: [15, 30, 60],
+    videoBitrateRange: [15000, 30000],
+    audioBitrateRange: [192, 400],
+    sampleRate: 48000,
+    lufsRange: [-26, -22],
+    targetLufs: -24,
+    defaultVideoBitrate: 20000,
+    defaultAudioBitrate: 256,
+  };
+
+  const el = (id) => document.getElementById(id);
+  const dropzone = el('dropzone');
+  const fileInput = el('fileInput');
+  const fileInfo = el('fileInfo');
+  const fileNameLabel = el('fileNameLabel');
+  const fileMetaLabel = el('fileMetaLabel');
+  const engineStatus = el('engineStatus');
+  const engineStatusText = el('engineStatusText');
+  const beforeCard = el('beforeCard');
+  const beforeBanner = el('beforeBanner');
+  const beforeTable = el('beforeTable');
+  const durationChoice = el('durationChoice');
+  const durationRadioGroup = el('durationRadioGroup');
+  const fixBtn = el('fixBtn');
+  const skipFixBtn = el('skipFixBtn');
+  const processingCard = el('processingCard');
+  const processingText = el('processingText');
+  const progressBar = el('progressBar');
+  const elapsedLabel = el('elapsedLabel');
+  const cancelBtn = el('cancelBtn');
+  const logBox = el('logBox');
+  const afterCard = el('afterCard');
+  const afterBanner = el('afterBanner');
+  const afterTable = el('afterTable');
+  const downloadVideoBtn = el('downloadVideoBtn');
+  const downloadReportBtn = el('downloadReportBtn');
+  const startOverBtn = el('startOverBtn');
+
+  let ffmpeg = null;
+  let ffmpegLoaded = false;
+  let currentFile = null;
+  let currentLog = '';
+  let chosenDurationMode = 'freeze'; // freeze | loop | short
+  let lastOutputBytes = null;
+  let lastReportText = '';
+  let lastOutputName = 'perion_spec_compliant.mp4';
+  let elapsedTimer = null;
+  let elapsedStart = 0;
+  let cancelled = false;
+
+  function startElapsedTimer(){
+    elapsedStart = Date.now();
+    elapsedLabel.textContent = '0s elapsed';
+    elapsedTimer = setInterval(() => {
+      elapsedLabel.textContent = Math.round((Date.now()-elapsedStart)/1000) + 's elapsed';
+    }, 1000);
+  }
+  function stopElapsedTimer(){
+    if (elapsedTimer) clearInterval(elapsedTimer);
+    elapsedTimer = null;
+  }
+
+  cancelBtn.addEventListener('click', async () => {
+    cancelled = true;
+    stopElapsedTimer();
+    try { ffmpeg.terminate(); } catch(e){}
+    ffmpeg = null;
+    ffmpegLoaded = false;
+    processingCard.classList.add('hidden');
+    beforeCard.classList.remove('hidden');
+    beforeBanner.innerHTML = `<div class="summary-banner fail">Cancelled. The video engine has been reset — click "Fix it" to start over.</div>`;
+  });
+
+  // ---------- UI: upload ----------
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  function resetUI(){
+    beforeCard.classList.add('hidden');
+    processingCard.classList.add('hidden');
+    afterCard.classList.add('hidden');
+    fileInfo.classList.add('hidden');
+    durationChoice.classList.add('hidden');
+    logBox.style.display = 'none';
+    logBox.textContent = '';
+    fileInput.value = '';
+  }
+
+  startOverBtn.addEventListener('click', resetUI);
+
+  // ---------- notifications ----------
+  const toastStack = el('toastStack');
+
+  function showToast(title, body){
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerHTML = `<div class="tt">${title}</div><div class="tb">${body}</div>`;
+    toastStack.appendChild(t);
+    setTimeout(() => t.remove(), 6000);
+  }
+
+  function notify(title, body){
+    // Always show the in-page toast (works regardless of permission/focus state), and layer a real
+    // OS-level notification on top when allowed — useful since encoding can take long enough that
+    // people tab away.
+    showToast(title, body);
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try { new Notification(title, { body }); } catch(e){ /* some browsers restrict this on file/local origins */ }
+    }
+  }
+
+  function requestNotifyPermissionOnce(){
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(()=>{});
+    }
+  }
+
+  async function handleFile(file){
+    requestNotifyPermissionOnce();
+    resetUI();
+    currentFile = file;
+    fileInfo.classList.remove('hidden');
+    fileNameLabel.textContent = file.name;
+    fileMetaLabel.textContent = `${(file.size/1024/1024).toFixed(1)} MB · ${file.type || 'unknown type'}`;
+
+    try {
+      await ensureFFmpegLoaded();
+    } catch (err) {
+      return; // ensureFFmpegLoaded already rendered a specific error + retry affordance
+    }
+    await runSpecCheck(file);
+  }
+
+  // ---------- ffmpeg.wasm lifecycle ----------
+  const engineProgressBar = el('engineProgressBar');
+  const engineCancelBtn = el('engineCancelBtn');
+  const engineSpinner = el('engineSpinner');
+
+  // Two CDN mirrors of the same exact package versions, tried in order. If the first stalls or
+  // fails outright (slow/filtered corporate network, transient CDN issue), fall back automatically
+  // rather than leaving the user stuck on a single host with no recourse.
+  // NOTE: these point at the ESM ("/dist/esm/") builds, not the UMD ones the <script> tags load.
+  // Browsers require a Worker's top-level script to be same-origin (or a blob: URL) — there is no
+  // "cross-origin is fine if CORS allows it" exception the way there is for plain <script> tags.
+  // classWorkerURL below hands the worker constructor a blob: URL to satisfy that, but a blob: URL
+  // is only usable as a *module*-type worker if its content is an actual ES module, so it has to be
+  // paired with the ESM worker/core builds — pairing it with the classic UMD build (what the
+  // library falls back to automatically, and what earlier versions of this page mistakenly combined
+  // it with) fails silently deep inside the worker.
+  const CDN_MIRRORS = [
+    {
+      label: 'jsDelivr',
+      core: 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm',
+      pkg: 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm',
+    },
+    {
+      label: 'unpkg',
+      core: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm',
+      pkg: 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/esm',
+    },
+  ];
+
+  // @ffmpeg/ffmpeg@0.12.10's dist/esm/worker.js verbatim, except its two relative imports are
+  // rewritten to absolute URLs (built per-mirror below) — a blob: URL has no path hierarchy for
+  // "./const.js" to resolve against, so the relative form fails immediately once the module worker
+  // starts. This is otherwise character-for-character what jsDelivr serves at that path.
+  const WORKER_JS_TEMPLATE = (base) => `
+import { CORE_URL, FFMessageType } from "${base}/const.js";
+import { ERROR_UNKNOWN_MESSAGE_TYPE, ERROR_NOT_LOADED, ERROR_IMPORT_FAILURE, } from "${base}/errors.js";
+let ffmpeg;
+const load = async ({ coreURL: _coreURL, wasmURL: _wasmURL, workerURL: _workerURL, }) => {
+    const first = !ffmpeg;
+    try {
+        if (!_coreURL) _coreURL = CORE_URL;
+        importScripts(_coreURL);
+    } catch {
+        if (!_coreURL) _coreURL = CORE_URL.replace('/umd/', '/esm/');
+        self.createFFmpegCore = (await import(/* webpackIgnore: true */ /* @vite-ignore */ _coreURL)).default;
+        if (!self.createFFmpegCore) { throw ERROR_IMPORT_FAILURE; }
+    }
+    const coreURL = _coreURL;
+    const wasmURL = _wasmURL ? _wasmURL : _coreURL.replace(/.js$/g, ".wasm");
+    const workerURL = _workerURL ? _workerURL : _coreURL.replace(/.js$/g, ".worker.js");
+    ffmpeg = await self.createFFmpegCore({
+        mainScriptUrlOrBlob: \`\${coreURL}#\${btoa(JSON.stringify({ wasmURL, workerURL }))}\`,
+    });
+    ffmpeg.setLogger((data) => self.postMessage({ type: FFMessageType.LOG, data }));
+    ffmpeg.setProgress((data) => self.postMessage({ type: FFMessageType.PROGRESS, data }));
+    return first;
+};
+const exec = ({ args, timeout = -1 }) => {
+    ffmpeg.setTimeout(timeout);
+    ffmpeg.exec(...args);
+    const ret = ffmpeg.ret;
+    ffmpeg.reset();
+    return ret;
+};
+const writeFile = ({ path, data }) => { ffmpeg.FS.writeFile(path, data); return true; };
+const readFile = ({ path, encoding }) => ffmpeg.FS.readFile(path, { encoding });
+const deleteFile = ({ path }) => { ffmpeg.FS.unlink(path); return true; };
+const rename = ({ oldPath, newPath }) => { ffmpeg.FS.rename(oldPath, newPath); return true; };
+const createDir = ({ path }) => { ffmpeg.FS.mkdir(path); return true; };
+const listDir = ({ path }) => {
+    const names = ffmpeg.FS.readdir(path);
+    const nodes = [];
+    for (const name of names) {
+        const stat = ffmpeg.FS.stat(\`\${path}/\${name}\`);
+        const isDir = ffmpeg.FS.isDir(stat.mode);
+        nodes.push({ name, isDir });
+    }
+    return nodes;
+};
+const deleteDir = ({ path }) => { ffmpeg.FS.rmdir(path); return true; };
+const mount = ({ fsType, options, mountPoint }) => {
+    const fs = ffmpeg.FS.filesystems[fsType];
+    if (!fs) return false;
+    ffmpeg.FS.mount(fs, options, mountPoint);
+    return true;
+};
+const unmount = ({ mountPoint }) => { ffmpeg.FS.unmount(mountPoint); return true; };
+self.onmessage = async ({ data: { id, type, data: _data }, }) => {
+    const trans = [];
+    let data;
+    try {
+        if (type !== FFMessageType.LOAD && !ffmpeg) throw ERROR_NOT_LOADED;
+        switch (type) {
+            case FFMessageType.LOAD: data = await load(_data); break;
+            case FFMessageType.EXEC: data = exec(_data); break;
+            case FFMessageType.WRITE_FILE: data = writeFile(_data); break;
+            case FFMessageType.READ_FILE: data = readFile(_data); break;
+            case FFMessageType.DELETE_FILE: data = deleteFile(_data); break;
+            case FFMessageType.RENAME: data = rename(_data); break;
+            case FFMessageType.CREATE_DIR: data = createDir(_data); break;
+            case FFMessageType.LIST_DIR: data = listDir(_data); break;
+            case FFMessageType.DELETE_DIR: data = deleteDir(_data); break;
+            case FFMessageType.MOUNT: data = mount(_data); break;
+            case FFMessageType.UNMOUNT: data = unmount(_data); break;
+            default: throw ERROR_UNKNOWN_MESSAGE_TYPE;
+        }
+    } catch (e) {
+        self.postMessage({ id, type: FFMessageType.ERROR, data: e.toString() });
+        return;
+    }
+    if (data instanceof Uint8Array) { trans.push(data.buffer); }
+    self.postMessage({ id, type, data }, trans);
+};
+`;
+  const STALL_TIMEOUT_MS = 25000; // no new bytes for this long on a single file => treat as stalled
+
+  let engineLoadAborted = false;
+  let engineLoadController = null;
+
+  engineCancelBtn.addEventListener('click', () => {
+    engineLoadAborted = true;
+    if (engineLoadController) engineLoadController.abort();
+  });
+
+  // Fetches a resource with byte-level progress and a stall watchdog (rather than an overall
+  // timeout) so a genuinely large-but-progressing download on a slow connection isn't punished,
+  // while a truly hung connection is caught and surfaced instead of spinning forever.
+  function fetchWithProgress(url, onBytes, signal){
+    return fetch(url, { signal }).then(async (res) => {
+      if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+      const total = parseInt(res.headers.get('Content-Length') || '0', 10);
+      const reader = res.body.getReader();
+      const chunks = [];
+      let received = 0;
+      let lastByteTime = Date.now();
+      let watchdog = setInterval(() => {
+        if (Date.now() - lastByteTime > STALL_TIMEOUT_MS) {
+          clearInterval(watchdog);
+          try { reader.cancel(); } catch(e){}
+        }
+      }, 2000);
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          received += value.length;
+          lastByteTime = Date.now();
+          onBytes(received, total);
+        }
+      } finally {
+        clearInterval(watchdog);
+      }
+      if (total && received < total) throw new Error(`Connection stalled ${STALL_TIMEOUT_MS/1000}s into downloading ${url.split('/').pop()}`);
+      return new Blob(chunks);
+    });
+  }
+
+  async function loadFromMirror(mirror, signal){
+    // core.js (ESM build) + the wasm binary go through our own progress-tracked fetch.
+    const parts = [
+      { key:'core', url:`${mirror.core}/ffmpeg-core.js`, mime:'text/javascript', approxBytes: 130_000 },
+      { key:'wasm', url:`${mirror.core}/ffmpeg-core.wasm`, mime:'application/wasm', approxBytes: 31_000_000 },
+    ];
+    const totalApprox = parts.reduce((s,p)=>s+p.approxBytes, 0);
+    const received = { core:0, wasm:0 };
+    const urls = {};
+    for (const part of parts) {
+      engineStatusText.textContent = `Loading video engine from ${mirror.label} — ${part.key === 'wasm' ? 'encoder core (~30MB)' : part.key + ' script'}…`;
+      const blob = await fetchWithProgress(part.url, (got) => {
+        received[part.key] = got;
+        const doneBytes = received.core + received.wasm;
+        const pct = Math.min(99, Math.round((doneBytes/totalApprox)*100));
+        engineProgressBar.style.width = pct + '%';
+        engineStatusText.textContent = `Loading video engine from ${mirror.label}… ${(doneBytes/1e6).toFixed(1)} / ~${(totalApprox/1e6).toFixed(0)} MB`;
+      }, signal);
+      urls[part.key] = URL.createObjectURL(new Blob([blob], { type: part.mime }));
+    }
+    // The worker bootstrap script itself is tiny (a few KB) and static, so it's built locally from
+    // WORKER_JS_TEMPLATE rather than fetched — this is what becomes the top-level worker script via
+    // classWorkerURL, wrapped in a blob: URL so Worker construction never has an origin mismatch.
+    urls.worker = URL.createObjectURL(new Blob([WORKER_JS_TEMPLATE(mirror.pkg)], { type: 'text/javascript' }));
+    return urls;
+  }
+
+  async function ensureFFmpegLoaded(){
+    if (ffmpegLoaded) return;
+    engineLoadAborted = false;
+    engineStatus.classList.remove('hidden');
+    engineProgressBar.style.width = '0%';
+    engineSpinner.style.display = '';
+    const { FFmpeg } = FFmpegWASM;
+    const LOAD_START_TIMEOUT_MS = 45000;
+    function freshFFmpeg(){
+      const f = new FFmpeg();
+      f.on('log', ({ message }) => { currentLog += message + '\n'; appendLogLine(message); });
+      f.on('progress', ({ progress }) => {
+        if (progress >= 0 && progress <= 1) progressBar.style.width = (progress*100).toFixed(0) + '%';
+      });
+      return f;
+    }
+
+    let lastErr = null;
+    let timedOut = false;
+    for (const mirror of CDN_MIRRORS) {
+      if (engineLoadAborted) { lastErr = new Error('Cancelled by user'); break; }
+      engineLoadController = new AbortController();
+      // A fresh FFmpeg()/worker per attempt — reusing one after a failed or hung load can leave it
+      // in a state where a second .load() call never settles either.
+      ffmpeg = freshFFmpeg();
+      try {
+        const urls = await loadFromMirror(mirror, engineLoadController.signal);
+        engineStatusText.textContent = `Starting engine (loaded from ${mirror.label})…`;
+        // Browsers require a Worker's top-level script to be same-origin or a blob: URL — no "CORS
+        // makes cross-origin fine" exception the way there is for <script src> tags — so pointing
+        // classWorkerURL at a blob (urls.worker) is required whenever the page's own origin doesn't
+        // match the CDN's, which is always true here. The blob has to contain a real ES module
+        // (hence pairing it with the ESM core build + WORKER_JS_TEMPLATE, not the classic UMD
+        // worker chunk — that mismatch was this page's earlier bug and failed silently).
+        // Still wrapped in a timeout: if the worker starts but wasm init never finishes, the load()
+        // promise can hang forever with zero feedback — surface that instead of spinning.
+        await Promise.race([
+          ffmpeg.load({ coreURL: urls.core, wasmURL: urls.wasm, classWorkerURL: urls.worker }),
+          new Promise((_, reject) => setTimeout(() => { timedOut = true; reject(new Error('load-timeout')); }, LOAD_START_TIMEOUT_MS)),
+        ]);
+        ffmpegLoaded = true;
+        engineStatus.classList.add('hidden');
+        return;
+      } catch (err) {
+        lastErr = err;
+        try { ffmpeg.terminate(); } catch(e){}
+        if (engineLoadAborted) break;
+        if (timedOut) break; // a hang isn't fixed by trying a different download mirror
+        // otherwise try the next mirror
+      }
+    }
+
+    // every mirror failed, timed out, or the user cancelled — surface something actionable
+    engineSpinner.style.display = 'none';
+    engineProgressBar.style.width = '0%';
+    const msg = errMsg(lastErr);
+    const isNullOriginWorkerIssue = /origin 'null'/i.test(msg);
+    if (engineLoadAborted) {
+      engineStatusText.textContent = 'Loading cancelled.';
+    } else if (timedOut) {
+      engineStatusText.innerHTML = `The download finished but the engine never finished starting up (waited ${LOAD_START_TIMEOUT_MS/1000}s). Please open your browser's DevTools console (F12 or Cmd+Option+J) and check for a red error message right around when it got stuck — copy/paste that back here so it can be diagnosed. In the meantime, try reloading the page and running it again, since this can be transient.`;
+    } else if (isNullOriginWorkerIssue) {
+      engineStatusText.innerHTML = `Your browser won't let a file opened directly (file://) load the video engine. Easiest fix: open a terminal, cd into this file's folder, run <code>python3 -m http.server 8000</code>, then open <a href="http://localhost:8000/" target="_blank">http://localhost:8000/</a> and pick this file from the list instead of double-clicking it.`;
+    } else {
+      engineStatusText.innerHTML = `Could not load the video engine from either CDN mirror (${msg}). This usually means a firewall or proxy on this network is blocking/throttling cdn.jsdelivr.net and unpkg.com — try a different network (e.g. a phone hotspot) or ask IT to allowlist those two hosts, then reload and try again.`;
+    }
+    throw (lastErr instanceof Error) ? lastErr : new Error(msg);
+  }
+
+  // Errors surfacing from the ffmpeg.wasm worker sometimes arrive as plain strings rather than
+  // Error objects (its internal message-passing does `err.toString()` before posting back across
+  // the worker boundary), so a naive `.message` access silently yields "undefined" — this normalizes
+  // any of the shapes we might see into a readable string.
+  function errMsg(e){
+    if (!e) return 'unknown error';
+    if (typeof e === 'string') return e;
+    if (e.message) return e.message;
+    try { return JSON.stringify(e); } catch(_) { return String(e); }
+  }
+
+  function appendLogLine(msg){
+    logBox.style.display = 'block';
+    logBox.textContent += msg + '\n';
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  // ---------- probing ----------
+  function nativeProbe(file){
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const v = document.createElement('video');
+      v.preload = 'metadata';
+      v.onloadedmetadata = () => {
+        const data = { width: v.videoWidth, height: v.videoHeight, duration: v.duration };
+        URL.revokeObjectURL(url);
+        resolve(data);
+      };
+      v.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Browser could not read this video file')); };
+      v.src = url;
+    });
+  }
+
+  function parseIntStreamInfo(log){
+    // Pull the ffmpeg -i human-readable probe block apart with regex.
+    const durMatch = log.match(/Duration:\s*(\d+):(\d+):(\d+\.\d+),.*?bitrate:\s*(\d+)\s*kb\/s/);
+    const overallBitrateKbps = durMatch ? parseInt(durMatch[4], 10) : null;
+
+    const lines = log.split('\n');
+    const videoLine = lines.find(l => /Stream #\d+:\d+.*Video:/.test(l)) || '';
+    const audioLine = lines.find(l => /Stream #\d+:\d+.*Audio:/.test(l)) || '';
+
+    const dimsMatch = videoLine.match(/(\d{2,5})x(\d{2,5})/);
+    const fpsMatch = videoLine.match(/([\d.]+)\s*fps/);
+    const vBitrateMatch = videoLine.match(/(\d+)\s*kb\/s/);
+    const codecMatchV = videoLine.match(/Video:\s*([a-zA-Z0-9_]+)/);
+
+    const aRateMatch = audioLine.match(/(\d+)\s*Hz/);
+    const aBitrateMatch = audioLine.match(/(\d+)\s*kb\/s/);
+    const codecMatchA = audioLine.match(/Audio:\s*([a-zA-Z0-9_]+)/);
+
+    return {
+      width: dimsMatch ? parseInt(dimsMatch[1],10) : null,
+      height: dimsMatch ? parseInt(dimsMatch[2],10) : null,
+      fps: fpsMatch ? parseFloat(fpsMatch[1]) : null,
+      videoBitrateKbps: vBitrateMatch ? parseInt(vBitrateMatch[1],10) : null,
+      videoCodec: codecMatchV ? codecMatchV[1] : null,
+      audioSampleRate: aRateMatch ? parseInt(aRateMatch[1],10) : null,
+      audioBitrateKbps: aBitrateMatch ? parseInt(aBitrateMatch[1],10) : null,
+      audioCodec: codecMatchA ? codecMatchA[1] : null,
+      overallBitrateKbps,
+      hasAudio: !!audioLine,
+    };
+  }
+
+  async function ffmpegProbe(vpath){
+    currentLog = '';
+    try {
+      await ffmpeg.exec(['-i', vpath]);
+    } catch (e) { /* ffmpeg exits non-zero with no output file specified — expected, we only want the log */ }
+    return parseIntStreamInfo(currentLog);
+  }
+
+  async function measureLoudness(vpath){
+    currentLog = '';
+    try {
+      // -vn: skip video decode entirely — loudness only needs the audio track. Without this,
+      // ffmpeg.wasm's single-threaded decoder has to decode the FULL video stream just to throw
+      // it away, which on a large/long file can turn a few-second audio analysis into many minutes.
+      await ffmpeg.exec(['-i', vpath, '-vn', '-af', 'loudnorm=I=-24:TP=-2:LRA=11:print_format=json', '-f', 'null', '-']);
+    } catch(e) { /* null muxer output, ignore */ }
+    const start = currentLog.lastIndexOf('{');
+    const end = currentLog.lastIndexOf('}');
+    if (start === -1 || end === -1) return null;
+    try { return JSON.parse(currentLog.slice(start, end+1)); } catch(e){ return null; }
+  }
+
+  function nearestBucket(duration){
+    return SPEC.durationOptions.reduce((a,b) => Math.abs(b-duration) < Math.abs(a-duration) ? b : a);
+  }
+
+  function within(v, range){ return v !== null && v !== undefined && v >= range[0] && v <= range[1]; }
+
+  function buildChecks(probe, native, lufs, container, targetDuration){
+    const width = probe.width || native.width;
+    const height = probe.height || native.height;
+    const duration = native.duration;
+    const fps = probe.fps;
+    const vBitrate = probe.videoBitrateKbps || probe.overallBitrateKbps;
+    const aBitrate = probe.audioBitrateKbps;
+    const sampleRate = probe.audioSampleRate;
+    const bucket = targetDuration || nearestBucket(duration);
+
+    return {
+      bucket,
+      checks: [
+        { name: 'Container is MP4', pass: container === 'mp4', measured: container || 'unknown' },
+        { name: 'Resolution is 1920×1080', pass: width===1920 && height===1080, measured: (width&&height)?`${width}×${height}`:'unknown' },
+        { name: 'Frame rate is 23.98 or 29.97', pass: fps!=null && SPEC.fpsOptions.some(f=>Math.abs(fps-f)<0.05), measured: fps!=null?`${fps.toFixed(2)} fps`:'unknown' },
+        { name: `Duration matches a standard length (nearest: ${bucket}s)`, pass: Math.abs(duration-bucket)<0.2, measured: `${duration.toFixed(2)}s` },
+        { name: 'Video bitrate within 15,000–30,000 kbps', pass: within(vBitrate, SPEC.videoBitrateRange), measured: vBitrate?`${vBitrate.toLocaleString()} kbps${probe.videoBitrateKbps?'':' (est. from overall)'}`:'unknown' },
+        { name: 'Audio bitrate within 192–400 kbps', pass: within(aBitrate, SPEC.audioBitrateRange), measured: aBitrate?`${aBitrate} kbps`:(probe.hasAudio?'unknown':'no audio track') },
+        { name: 'Audio sample rate is 48 kHz', pass: sampleRate===48000, measured: sampleRate?`${sampleRate} Hz`:'unknown' },
+        { name: 'Loudness within -26 to -22 LUFS', pass: lufs!=null && within(lufs, SPEC.lufsRange), measured: lufs!=null?`${lufs.toFixed(1)} LUFS`:'unknown' },
+      ]
+    };
+  }
+
+  function renderTable(table, result){
+    table.innerHTML = `<tr><th>Spec</th><th>Measured</th><th>Status</th></tr>` +
+      result.checks.map(c => `<tr><td>${c.name}</td><td>${c.measured}</td><td><span class="badge ${c.pass?'pass':'fail'}">${c.pass?'PASS':'FAIL'}</span></td></tr>`).join('');
+  }
+
+  function allPass(result){ return result.checks.every(c => c.pass); }
+
+  // ---------- main flow: check ----------
+  let beforeResult = null, nativeMeta = null, ext = null;
+
+  async function runSpecCheck(file){
+    beforeCard.classList.remove('hidden');
+    beforeBanner.innerHTML = `<div class="status-line"><div class="spinner"></div><span>Analyzing video…</span></div>`;
+    beforeTable.innerHTML = '';
+    durationChoice.classList.add('hidden');
+    skipFixBtn.classList.add('hidden');
+
+    ext = (file.name.split('.').pop() || '').toLowerCase();
+    const container = ext === 'mp4' ? 'mp4' : ext;
+    nativeMeta = await nativeProbe(file);
+
+    const vpath = 'input.' + (ext || 'mp4');
+    const { fetchFile } = FFmpegUtil;
+    await ffmpeg.writeFile(vpath, await fetchFile(file));
+
+    const probe = await ffmpegProbe(vpath);
+    const lufsData = await measureLoudness(vpath);
+    const lufs = lufsData ? parseFloat(lufsData.input_i) : null;
+
+    beforeResult = buildChecks(probe, nativeMeta, lufs, container, null);
+    beforeResult._probe = probe; beforeResult._lufsData = lufsData; beforeResult._container = container; beforeResult._vpath = vpath;
+
+    renderTable(beforeTable, beforeResult);
+    notify('Video uploaded', `"${currentFile.name}" has been analyzed — spec check is ready below.`);
+
+    const passing = allPass(beforeResult);
+    beforeBanner.innerHTML = passing
+      ? `<div class="summary-banner pass">✅ Already meets every spec.</div>`
+      : `<div class="summary-banner fail">⚠️ ${beforeResult.checks.filter(c=>!c.pass).length} of ${beforeResult.checks.length} specs need fixing.</div>`;
+
+    fixBtn.textContent = passing ? 'Re-encode anyway & verify' : 'Fix it & conform to spec';
+    skipFixBtn.classList.toggle('hidden', !passing);
+
+    // Duration handling: does the source fall short of its nearest bucket?
+    const bucket = beforeResult.bucket;
+    if (nativeMeta.duration < bucket - 0.2 && bucket - nativeMeta.duration > 0.2) {
+      if (nativeMeta.duration < 7.5) {
+        durationChoice.classList.remove('hidden');
+        durationRadioGroup.innerHTML = `<div class="note" style="background:#fdeaea;color:#8a1c1f;">This clip is only ${nativeMeta.duration.toFixed(1)}s — too short to reasonably pad to even the 15s minimum. Fixing everything else, but duration will likely still fail. Consider sourcing a longer cut.</div>`;
+      } else {
+        durationChoice.classList.remove('hidden');
+        buildDurationRadios(bucket - nativeMeta.duration);
+      }
+    }
+  }
+
+  function buildDurationRadios(gapSeconds){
+    const options = [
+      { id:'freeze', t:'Freeze last frame (recommended)', d:`Hold the final frame for ${gapSeconds.toFixed(1)}s to pad out to the full length. Simplest, least disruptive to the edit.` },
+      { id:'loop', t:'Loop from the start', d:'Replay the opening seconds again at the end. Only looks right if the opening loops cleanly.' },
+      { id:'short', t:'Leave it short', d:'Keep the original length untouched and report duration as a failing spec — no padding added.' },
+    ];
+    chosenDurationMode = 'freeze';
+    durationRadioGroup.innerHTML = options.map((o,i) => `
+      <label class="radio-option ${i===0?'selected':''}" data-id="${o.id}">
+        <input type="radio" name="durMode" value="${o.id}" ${i===0?'checked':''}/>
+        <div><div class="t">${o.t}</div><div class="d">${o.d}</div></div>
+      </label>`).join('');
+    durationRadioGroup.querySelectorAll('.radio-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        durationRadioGroup.querySelectorAll('.radio-option').forEach(o=>o.classList.remove('selected'));
+        opt.classList.add('selected');
+        opt.querySelector('input').checked = true;
+        chosenDurationMode = opt.dataset.id;
+      });
+    });
+  }
+
+  skipFixBtn.addEventListener('click', () => {
+    lastReportText = buildReportText(beforeResult, beforeResult, true);
+    lastOutputBytes = null;
+    afterCard.classList.remove('hidden');
+    notify('Ready', `"${currentFile.name}" is verified and your QC report is ready to download.`);
+    afterBanner.innerHTML = `<div class="summary-banner pass">✅ Verified — no changes made.</div>`;
+    renderTable(afterTable, beforeResult);
+    downloadVideoBtn.classList.add('hidden');
+  });
+
+  fixBtn.addEventListener('click', runFix);
+
+  // ---------- main flow: fix ----------
+  async function runFix(){
+    cancelled = false;
+    beforeCard.classList.add('hidden');
+    processingCard.classList.remove('hidden');
+    progressBar.style.width = '0%';
+    logBox.style.display = 'none';
+    logBox.textContent = '';
+    startElapsedTimer();
+
+    const bucket = beforeResult.bucket;
+    const srcFps = beforeResult._probe.fps || 29.97;
+    const fpsTarget = Math.abs(srcFps-23.976) < Math.abs(srcFps-29.97) ? '24000/1001' : '30000/1001';
+
+    let workingPath = beforeResult._vpath;
+    const needsPad = nativeMeta.duration < bucket - 0.2 && chosenDurationMode !== 'short';
+
+    try {
+      if (needsPad) {
+        processingText.textContent = 'Extending clip to reach target length…';
+        const padded = 'padded.mp4';
+        const vf = chosenDurationMode === 'freeze' ? 'tpad=stop_mode=clone:stop_duration=6' : null;
+        const af = 'apad=pad_dur=6';
+        const args = ['-i', workingPath];
+        if (chosenDurationMode === 'freeze') {
+          args.push('-vf', vf, '-af', af);
+        } else {
+          // loop: concat the file with itself then trim to bucket in the main pass
+          args.push('-filter_complex', `[0:v][0:a][0:v][0:a]concat=n=2:v=1:a=1[v][a]`, '-map', '[v]', '-map', '[a]');
+        }
+        args.push('-t', String(bucket + 2), '-c:v','libx264','-b:v','20000k','-c:a','aac','-b:a','320k','-ar','48000', padded);
+        await ffmpeg.exec(args);
+        workingPath = padded;
+      }
+
+      processingText.textContent = 'Measuring loudness…';
+      const measured = await measureLoudness(workingPath);
+      if (!measured) throw new Error('Could not measure source loudness.');
+
+      processingText.textContent = 'Encoding compliant MP4 (this is the slow part)…';
+      const vf = `scale=${SPEC.width}:${SPEC.height}:force_original_aspect_ratio=decrease,pad=${SPEC.width}:${SPEC.height}:(ow-iw)/2:(oh-ih)/2,fps=${fpsTarget}`;
+      const af = `loudnorm=I=${SPEC.targetLufs}:TP=-2:LRA=11:measured_I=${measured.input_i}:measured_TP=${measured.input_tp}:measured_LRA=${measured.input_lra}:measured_thresh=${measured.input_thresh}:offset=${measured.target_offset}:linear=true,aresample=${SPEC.sampleRate}`;
+      // Low-motion sections (e.g. a freeze-padded tail) compress efficiently enough that x264's
+      // average bitrate can drift under the 15,000 kbps floor even when asked for 20,000 — so aim
+      // higher whenever padding was used, same lesson learned validating the Adobe-video-to-spec skill.
+      const vb = needsPad ? 26000 : 20000;
+      const ab = 320; // comfortably mid-range of the 192-400 kbps window
+
+      const outName = 'output.mp4';
+      currentLog = '';
+      await ffmpeg.exec([
+        '-i', workingPath,
+        '-t', String(bucket),
+        '-vf', vf,
+        '-af', af,
+        '-c:v','libx264','-pix_fmt','yuv420p',
+        '-b:v', `${vb}k`, '-maxrate', `${vb}k`, '-minrate', `${vb}k`, '-bufsize', `${vb}k`,
+        '-x264-params','nal-hrd=cbr:force-cfr=1',
+        '-c:a','aac','-b:a', `${ab}k`, '-ar', String(SPEC.sampleRate), '-ac','2',
+        '-movflags','+faststart',
+        outName
+      ]);
+
+      processingText.textContent = 'Verifying result…';
+      const outProbe = await ffmpegProbe(outName);
+      const outNative = await (async () => {
+        const data = await ffmpeg.readFile(outName);
+        const blob = new Blob([data], { type:'video/mp4' });
+        return await nativeProbe(blob);
+      })();
+      const outLufsData = await measureLoudness(outName);
+      const outLufs = outLufsData ? parseFloat(outLufsData.input_i) : null;
+
+      const afterResult = buildChecks(outProbe, outNative, outLufs, 'mp4', bucket);
+
+      lastOutputBytes = await ffmpeg.readFile(outName);
+      lastOutputName = currentFile.name.replace(/\.[^.]+$/, '') + '_spec_compliant.mp4';
+      lastReportText = buildReportText(beforeResult, afterResult, false);
+
+      stopElapsedTimer();
+      processingCard.classList.add('hidden');
+      afterCard.classList.remove('hidden');
+      downloadVideoBtn.classList.remove('hidden');
+      notify('Video ready', `Your spec-compliant MP4 for "${currentFile.name}" is ready to download.`);
+      afterBanner.innerHTML = allPass(afterResult)
+        ? `<div class="summary-banner pass">✅ All specs met.</div>`
+        : `<div class="summary-banner fail">⚠️ Still ${afterResult.checks.filter(c=>!c.pass).length} spec(s) short — see below.</div>`;
+      renderTable(afterTable, afterResult);
+
+    } catch (err) {
+      stopElapsedTimer();
+      if (cancelled) return; // cancel button already rendered its own message
+      processingCard.classList.add('hidden');
+      beforeCard.classList.remove('hidden');
+      beforeBanner.innerHTML = `<div class="summary-banner fail">❌ Something went wrong during encoding: ${err.message}. Check the details below and try again.</div>`;
+      logBox.style.display = 'block';
+    }
+  }
+
+  function buildReportText(before, after, unchanged){
+    const lines = [];
+    lines.push(`Perion Video Spec Report`);
+    lines.push(`File: ${currentFile ? currentFile.name : 'unknown'}`);
+    lines.push('='.repeat(50));
+    lines.push(unchanged ? 'No changes made — source already met every spec.' : 'Before → After');
+    lines.push('');
+    (unchanged ? before.checks : after.checks).forEach((c,i) => {
+      const beforeC = before.checks[i];
+      if (unchanged) {
+        lines.push(`[${c.pass?'PASS':'FAIL'}] ${c.name} — ${c.measured}`);
+      } else {
+        lines.push(`[${c.pass?'PASS':'FAIL'}] ${c.name}`);
+        lines.push(`    before: ${beforeC.measured}`);
+        lines.push(`    after:  ${c.measured}`);
+      }
+    });
+    lines.push('='.repeat(50));
+    const result = unchanged ? before : after;
+    lines.push(`Overall: ${allPass(result) ? 'ALL SPECS MET' : 'SOME SPECS NOT MET — see above'}`);
+    return lines.join('\n');
+  }
+
+  downloadVideoBtn.addEventListener('click', () => {
+    if (!lastOutputBytes) return;
+    const blob = new Blob([lastOutputBytes], { type:'video/mp4' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = lastOutputName;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  });
+
+  downloadReportBtn.addEventListener('click', () => {
+    const blob = new Blob([lastReportText], { type:'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const base = currentFile ? currentFile.name.replace(/\.[^.]+$/, '') : 'video';
+    a.href = url; a.download = base + '_qc_report.txt';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  });
+
+})();
+</script>
+</body>
+</html>
